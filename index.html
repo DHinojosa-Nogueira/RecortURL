@@ -28,6 +28,14 @@
     .credit-text { position:absolute; bottom:calc(100% + 12px); left:50%; transform:translateX(-50%); width:min(410px,calc(100vw - 40px)); white-space:normal; text-align:center; border:1px solid #383838; border-radius:11px; background:#171717; color:#f8f8f8; padding:13px 17px; font-size:12px; line-height:1.5; box-shadow:0 8px 24px #0005; }
     .credit-name { display:block; }
     .credit-license { display:block; margin-top:8px; color:#bdbdbd; font-size:11px; }
+    /* Botón de visitas: misma línea central que el botón de créditos. */
+    .visit-dock { width:100%; position:relative; display:flex; align-items:center; justify-content:center; margin-top:24px; }
+    .visit-button { flex:none; height:43px; width:43px; border:1px solid #424242; background:#111; color:#fff; border-radius:50%; display:grid; place-items:center; transition:background .2s,border-color .2s; }
+    .visit-button:hover,.visit-button[aria-expanded="true"] { background:#242424; border-color:#aaa; }
+    .visit-button svg { width:21px; height:21px; }
+    .visit-count { position:absolute; top:50%; left:calc(50% + 34px); transform:translateY(-50%); border:1px solid #383838; border-radius:8px; background:#080808; padding:4px 7px; line-height:1; box-shadow:0 8px 24px #0005; }
+    .visit-count img { display:block; height:20px; width:auto; }
+
     .brand { display:flex; align-items:center; justify-content:center; gap:15px; margin-bottom:46px; user-select:none; }
     .brand svg { width:51px; height:51px; flex:none; }
     .brand h1 { margin:0; font-size:clamp(37px,7vw,54px); font-weight:760; letter-spacing:-.065em; line-height:1; }
@@ -77,6 +85,12 @@
       </div>
       <p id="errorMessage" class="error" role="alert" hidden></p>
     </form>
+    <div class="visit-dock" id="visitDock">
+      <button id="visitButton" class="visit-button" type="button" aria-label="Mostrar número de visitas" aria-expanded="false" aria-controls="visitCount" title="Visitas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.8 10-6.8S22 12 22 12s-3.6 6.8-10 6.8S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <span id="visitCount" class="visit-count" aria-label="Visitas totales" hidden><img id="visitBadge" alt="Contador de visitas totales"></span>
+    </div>
     <div id="result" class="result" aria-live="polite" hidden>
       <a id="resultLink" target="_blank" rel="noopener noreferrer"></a>
       <button id="copyButton" class="copy" type="button" title="Copiar enlace" aria-label="Copiar enlace"><svg id="copyIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>
@@ -6450,6 +6464,33 @@ copyButton.addEventListener("click",async()=>{
     setTimeout(()=>{copyIcon.innerHTML=copyOriginal;copyButton.title="Copiar enlace"},1800);
   }catch(_){resultLink.focus();}
 });
+// Hits (https://hits.sh): registra una visita por carga y muestra solo el número.
+// El identificador es el dominio y la ruta de GitHub Pages, sin el fragmento
+// de los enlaces acortados, para que toda la página comparta el mismo contador.
+const visitButton=document.getElementById("visitButton");
+const visitCount=document.getElementById("visitCount");
+const visitBadge=document.getElementById("visitBadge");
+visitButton.addEventListener("click",()=>{
+  const expanded=visitButton.getAttribute("aria-expanded")==="true";
+  visitButton.setAttribute("aria-expanded",String(!expanded));
+  visitButton.setAttribute("aria-label",expanded?"Mostrar número de visitas":"Ocultar número de visitas");
+  visitCount.hidden=expanded;
+});
+if(location.protocol==="https:" || location.protocol==="http:"){
+  // El badge se solicita una sola vez al entrar; pulsar el ojo no suma visitas.
+  const pagePath=location.pathname.replace(/(?:\/index\.html|\/)$/i,"");
+  const hitsUrl=new URL("https://hits.sh/"+location.host+pagePath+".svg");
+  hitsUrl.searchParams.set("view","total");
+  hitsUrl.searchParams.set("label","\u200B"); // Etiqueta invisible: solo se ve la cifra.
+  hitsUrl.searchParams.set("style","flat-square");
+  hitsUrl.searchParams.set("color","#080808");
+  hitsUrl.searchParams.set("labelColor","#080808");
+  visitBadge.src=hitsUrl.toString();
+}else{
+  // El recuento compartido solo funciona en la página publicada, no en file://.
+  visitButton.disabled=true;
+  visitButton.title="Disponible al publicar la página";
+}
 const creditButton=document.getElementById("creditButton"),creditText=document.getElementById("creditText");
 creditButton.addEventListener("click",()=>{
   const expanded=creditButton.getAttribute("aria-expanded")==="true";
